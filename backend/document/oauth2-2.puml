@@ -1,0 +1,109 @@
+FilterChainProxy->AbstractAuthenticationProcessingFilter: doFilter
+
+AbstractAuthenticationProcessingFilter->AbstractAuthenticationProcessingFilter: doFilter
+
+AbstractAuthenticationProcessingFilter->AbstractAuthenticationProcessingFilter: requiresAuthentication
+
+note over AbstractAuthenticationProcessingFilter
+요청 URL이 "/login/oauth2/code/*" 패턴에 일치하는지 확인하고
+일치하면 인증을 시도합니다.
+일치하지 않으면 다음 필터로 요청을 전달합니다.
+end note
+
+AbstractAuthenticationProcessingFilter->OAuth2LoginAuthenticationFilter: attemptAuthentication
+
+OAuth2LoginAuthenticationFilter->HttpCookieOAuth2AuthorizationRequestRepository: removeAuthorizationRequest
+
+note over HttpCookieOAuth2AuthorizationRequestRepository
+HTTP 요청의 쿠키에 저장 했던 OAuth2AuthorizationRequest 객체를 리턴합니다.
+end note
+
+HttpCookieOAuth2AuthorizationRequestRepository->OAuth2LoginAuthenticationFilter: return OAuth2AuthorizationRequest
+
+OAuth2LoginAuthenticationFilter->InMemoryClientRegistrationRepository: findByRegistrationId
+
+InMemoryClientRegistrationRepository->OAuth2LoginAuthenticationFilter: return ClientRegistration
+
+OAuth2LoginAuthenticationFilter->ProviderManager: authenticate
+
+ProviderManager->OAuth2LoginAuthenticationProvider: authenticate
+
+OAuth2LoginAuthenticationProvider->OAuth2AuthorizationCodeAuthenticationProvider: authenticate
+
+OAuth2AuthorizationCodeAuthenticationProvider->DefaultAuthorizationCodeTokenResponseClient: getTokenResponse
+
+DefaultAuthorizationCodeTokenResponseClient->ClientAuthenticationMethodValidatingRequestEntityConverter: convert
+
+ClientAuthenticationMethodValidatingRequestEntityConverter->AbstractOAuth2AuthorizationGrantRequestEntityConverter: convert
+
+AbstractOAuth2AuthorizationGrantRequestEntityConverter->OAuth2AuthorizationCodeGrantRequestEntityConverter: createParameters
+
+note over OAuth2AuthorizationCodeGrantRequestEntityConverter
+액세스 토큰을 받기 위한 파라미터를 생성하여 리턴합니다.
+grant_type: authorization_code
+client_id
+code
+redirect_uri: http://localhost:8080/login/oauth2/code/google
+end note
+
+OAuth2AuthorizationCodeGrantRequestEntityConverter->AbstractOAuth2AuthorizationGrantRequestEntityConverter: return parameters
+
+AbstractOAuth2AuthorizationGrantRequestEntityConverter->ClientAuthenticationMethodValidatingRequestEntityConverter: return RequestEntity
+
+ClientAuthenticationMethodValidatingRequestEntityConverter->DefaultAuthorizationCodeTokenResponseClient: return RequestEntity
+
+DefaultAuthorizationCodeTokenResponseClient->DefaultAuthorizationCodeTokenResponseClient: getResponse
+
+note over DefaultAuthorizationCodeTokenResponseClient
+인증 서버에 액세스 토큰을 요청합니다.
+end note
+
+DefaultAuthorizationCodeTokenResponseClient->RestTemplate: exchange
+
+RestTemplate->DefaultAuthorizationCodeTokenResponseClient: return ResponseEntity<OAuth2AccessTokenResponse>
+
+DefaultAuthorizationCodeTokenResponseClient->OAuth2AuthorizationCodeAuthenticationProvider: return OAuth2AccessTokenResponse
+
+OAuth2AuthorizationCodeAuthenticationProvider->OAuth2LoginAuthenticationProvider: return OAuth2AuthorizationCodeAuthenticationToken
+
+OAuth2LoginAuthenticationProvider->CustomOAuth2UserService: loadUser
+
+CustomOAuth2UserService->DefaultOAuth2UserService: loadUser
+
+DefaultOAuth2UserService->OAuth2UserRequestEntityConverter: convert
+
+OAuth2UserRequestEntityConverter->DefaultOAuth2UserService: return RequestEntity
+
+DefaultOAuth2UserService->DefaultOAuth2UserService: getResponse
+
+note over DefaultOAuth2UserService
+리소스 서버에 사용자 정보를 요청합니다.
+end note
+
+DefaultOAuth2UserService->RestTemplate: exchange
+
+RestTemplate->DefaultOAuth2UserService: return ParameterizedTypeReference<Map<String, Object>>
+
+DefaultOAuth2UserService->CustomOAuth2UserService: return DefaultOAuth2User
+
+CustomOAuth2UserService->CustomOAuth2UserService: processOAuth2User
+
+CustomOAuth2UserService->OAuth2LoginAuthenticationProvider: return OAuth2User
+
+OAuth2LoginAuthenticationProvider->ProviderManager: return OAuth2LoginAuthenticationToken
+
+ProviderManager->OAuth2LoginAuthenticationFilter: return OAuth2LoginAuthenticationToken
+
+OAuth2LoginAuthenticationFilter->AbstractAuthenticationProcessingFilter: return OAuth2AuthenticationToken
+
+AbstractAuthenticationProcessingFilter->AbstractAuthenticationProcessingFilter: successfulAuthentication
+
+note over AbstractAuthenticationProcessingFilter
+SecurityContext에 인증 객체(OAuth2AuthenticationToken)를 설정합니다.
+end note
+
+AbstractAuthenticationProcessingFilter->OAuth2AuthenticationSuccessHandler: onAuthenticationSuccess
+
+OAuth2AuthenticationSuccessHandler->DefaultRedirectStrategy: sendRedirect
+
+DefaultRedirectStrategy->HttpServletResponse: sendRedirect

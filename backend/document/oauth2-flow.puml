@@ -1,0 +1,79 @@
+User->FrontEnd: Social Login Button Click
+note over User,FrontEnd
+사용자가 소셜 로그인 버튼을 클릭합니다.
+end note
+
+FrontEnd->BackEnd: Social Login URI Request
+note over FrontEnd,BackEnd
+백엔드에 로그인 주소를 요청합니다.
+아래와 같은 형식으로 요청합니다.
+GET http://localhost:8080/oauth2/authorization/google?
+redirect_uri=http://localhost:3000&mode=login
+redirect_uri 파라미터는 로그인 완료 후 토큰을 받을
+프론트엔드 서버 주소입니다.
+end note
+
+BackEnd->FrontEnd: Social Login URI Response
+note over FrontEnd,BackEnd
+백엔드에서 소셜 로그인 페이지 주소를 리턴합니다.
+이 때 소셜 로그인 후 리다이렉트 주소를 백엔드로 설정
+합니다.
+end note
+
+FrontEnd->User: Social Login page
+note over User,FrontEnd
+소셜 로그인 페이지를 출력합니다.
+end note
+
+User->FrontEnd: Login
+note over User,FrontEnd
+사용자가 소셜 로그인 페이지에서
+로그인합니다.
+end note
+
+FrontEnd->AuthorizationServer: Authorization Code Request
+note over FrontEnd,AuthorizationServer
+사용자가 로그인하면 인가 코드를 요청합니다.
+인가 코드는 백엔드로 리다이렉트 됩니다.
+end note
+
+AuthorizationServer->BackEnd: Authorization Code Response
+
+BackEnd->AuthorizationServer: Access Token Request
+note over BackEnd,AuthorizationServer
+백엔드에서 인가 코드로 인증 서버에
+액세스 토큰을 요청합니다.
+end note
+
+AuthorizationServer->BackEnd: Access Token Response
+
+BackEnd->ResourceServer: User Info Request
+note over BackEnd,ResourceServer
+백엔드에서 액세스 토큰으로 리소스 서버에
+사용자 정보를 요청합니다.
+end note
+
+ResourceServer->BackEnd: User Info Response
+
+BackEnd->BackEnd: Save user info and generate token
+note over BackEnd
+리소스 서버로부터 받은 사용자 정보를 DB에 저장합니다.
+서비스 자체 액세스 토큰과 리프레시 토큰을 생성합니다.
+리프레시 토큰을 DB에 저장합니다.
+end note
+
+BackEnd->FrontEnd: Redirect with token
+
+note over FrontEnd,BackEnd
+액세스 토큰과 리프레시 토큰을 쿼리 스트링 또는
+쿠키에 담아 프론트엔드로 리다이렉트 합니다.
+프론트엔드 주소는 최초 로그인 주소 요청시
+redirect_uri 파라미터에 담긴
+http://localhost:3000 입니다.
+end note
+
+FrontEnd->FrontEnd: Save token in cookie or local storage
+note over FrontEnd
+액세스 토큰과 리프레시 토큰을 쿠키 또는 로컬 스토리지에
+저장합니다.
+end note

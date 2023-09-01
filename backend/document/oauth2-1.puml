@@ -1,0 +1,50 @@
+FilterChainProxy->OncePerRequestFilter: doFilter
+
+OncePerRequestFilter->OAuth2AuthorizationRequestRedirectFilter: doFilterInternal
+
+OAuth2AuthorizationRequestRedirectFilter->DefaultOAuth2AuthorizationRequestResolver: resolve
+
+DefaultOAuth2AuthorizationRequestResolver->DefaultOAuth2AuthorizationRequestResolver: resolveRegistrationId
+
+note over DefaultOAuth2AuthorizationRequestResolver
+요청 URL이 "/oauth2/authorization/{registrationId}" 패턴에 일치하는지 확인하고
+일치하면 registrationId 를 리턴합니다.
+end note
+
+DefaultOAuth2AuthorizationRequestResolver->DefaultOAuth2AuthorizationRequestResolver: getAction
+
+note over DefaultOAuth2AuthorizationRequestResolver
+요청 파라미터에 action 이 있는지 확인합니다. 없다면 "login"을 사용합니다.
+end note
+
+DefaultOAuth2AuthorizationRequestResolver->DefaultOAuth2AuthorizationRequestResolver: resolve
+
+DefaultOAuth2AuthorizationRequestResolver->InMemoryClientRegistrationRepository: findByRegistrationId
+InMemoryClientRegistrationRepository->DefaultOAuth2AuthorizationRequestResolver: return ClientRegistration
+
+DefaultOAuth2AuthorizationRequestResolver->DefaultOAuth2AuthorizationRequestResolver: expandRedirectUri
+
+note over DefaultOAuth2AuthorizationRequestResolver
+OAuth2 인증 성공시 리다이렉트 할 URL을 생성합니다.
+기본적으로 "http://localhost:8080/login/oauth2/code/{registrationId}"
+패턴의 redirectUri 문자열을 생성합니다.
+end note
+
+DefaultOAuth2AuthorizationRequestResolver->OAuth2AuthorizationRequestRedirectFilter: return OAuth2AuthorizationRequest
+
+OAuth2AuthorizationRequestRedirectFilter->OAuth2AuthorizationRequestRedirectFilter: sendRedirectForAuthorization
+
+OAuth2AuthorizationRequestRedirectFilter->HttpCookieOAuth2AuthorizationRequestRepository: saveAuthorizationRequest
+
+OAuth2AuthorizationRequestRedirectFilter->DefaultRedirectStrategy: sendRedirect
+
+note over DefaultRedirectStrategy
+
+구글 로그인시 아래와 같은 패턴의 주소로 리다이렉트 합니다.
+https://accounts.google.com/o/oauth2/v2/auth?response_type=code&
+client_id=949952160304-pika5reefo4c963a2l59o5ggcj7oj99h.apps.googleusercontent.com&
+scope=profile%20email&state=c6i-2vTkrM00Ztu8MwPenL1rmqSNiwTYucNhIZmBYDI%3D&
+redirect_uri=http://localhost:8080/login/oauth2/code/google
+end note
+
+DefaultRedirectStrategy->HttpServletResponse: sendRedirect
